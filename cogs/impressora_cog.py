@@ -207,14 +207,14 @@ class impressora_cog(commands.Cog):
 		if not self.disponivel: return
 		if ctx.channel.name != self.channel_name: return
 		if len(impressoras) <= 0:
-			await ctx.send("Não há impressoras disponíveis")
+			await ctx.send("Não há impressoras disponíveis", delete_after = 5)
 			return
 		
 		self.disponivel = False
 		user = ctx.author ; channel = ctx.channel
 		_, today_month, today_year = get_day_month_year()
 
-		page = discord.Embed(title=f"Reserva de Impressoras", color=0xffff00)
+		page = discord.Embed(title=f"Reserva de Impressoras", color=0xff7200)
 		last_msg = await ctx.send(embed = page)
 
 		estado = 0
@@ -267,6 +267,7 @@ class impressora_cog(commands.Cog):
 
 		await self.send_dm(user.id, confirmation_str)
 		self.disponivel = True
+		await ctx.send("Reserva completa", delete_after = 5)
 		await last_msg.delete()
 		return
 		
@@ -278,14 +279,14 @@ class impressora_cog(commands.Cog):
 		if not self.disponivel: return
 		if ctx.channel.name != self.channel_name: return
 		if len(impressoras) <= 0:
-			await ctx.send("Não há impressoras disponíveis")
+			await ctx.send("Não há impressoras disponíveis", delete_after = 5)
 			return
 		
 		self.disponivel = False
 		user = ctx.author ; channel = ctx.channel
 		_, today_month, today_year = get_day_month_year()
 
-		page = discord.Embed(title=f"Remover Reserva", color=0xffff00)
+		page = discord.Embed(title=f"Remover Reserva", color=0xff7200)
 		last_msg = await ctx.send(embed = page)
 
 		estado = 0
@@ -349,6 +350,7 @@ class impressora_cog(commands.Cog):
 		await self.send_dm(user.id, confirmation_str)
 		
 		self.disponivel = True
+		await ctx.send("Reserva removida", delete_after = 5)
 		await last_msg.delete()	
 		return
 		
@@ -357,7 +359,9 @@ class impressora_cog(commands.Cog):
 	async def adicionar_impressora(self, ctx):
 		await ctx.message.delete()
 		role = discord.utils.get(ctx.guild.roles, name="Admin")
-		if role not in ctx.author.roles: return
+		if role not in ctx.author.roles:
+			await ctx.send("Você não possui permissão necessaria para adicionar impressoras", delete_after = 5)
+			return
 
 		if not self.disponivel: return
 		if ctx.channel.name != self.channel_name: 
@@ -368,7 +372,7 @@ class impressora_cog(commands.Cog):
 		user = ctx.author ; channel = ctx.channel
 		
 		description =  '```python\nEscreva o nome da impressora\n\n```'
-		page = discord.Embed(title=f"Adicionar Impressoras", description= description, color=0xffff00)
+		page = discord.Embed(title=f"Adicionar Impressoras", description= description, color=0xff7200)
 		last_msg = await ctx.send(embed = page)
 
 		def check_get_impressora(msg):
@@ -378,6 +382,7 @@ class impressora_cog(commands.Cog):
 		if name is None: return
 
 		add_impressora(name, " ")
+		await ctx.send("Impressora Adicionada", delete_after = 5)
 		self.disponivel = True
 		await last_msg.delete()
 	
@@ -386,13 +391,15 @@ class impressora_cog(commands.Cog):
 	async def remover_impressora(self, ctx):
 		await ctx.message.delete()
 		role = discord.utils.get(ctx.guild.roles, name="Admin")
-		if role not in ctx.author.roles: return
+		if role not in ctx.author.roles:
+			await ctx.send("Você não possui permissão necessaria para remover impressoras", delete_after = 5)
+			return
 		if not self.disponivel: return
 		if ctx.channel.name != self.channel_name: 
 			await ctx.send(self.wrong_channel_msg)
 			return
 		if len(impressoras) <= 0:
-			await ctx.send("Não há impressoras disponíveis")
+			await ctx.send("Não há impressoras disponíveis", delete_after = 5)
 			return
 		
 		self.disponivel = False
@@ -405,7 +412,7 @@ class impressora_cog(commands.Cog):
 		description += '```'
 
 
-		page = discord.Embed(title=f"Remover Impressoras", description= description, color=0xffff00)
+		page = discord.Embed(title=f"Remover Impressoras", description= description, color=0xff7200)
 		last_msg = await ctx.send(embed = page)
 
 		def check_get_impressora(msg):
@@ -451,7 +458,7 @@ class impressora_cog(commands.Cog):
 						await self.send_dm(reserva[1], msg)
 
 
-
+		await ctx.send("Impressora removida", delete_after = 5)
 		remove_impressora(impressoras[idx].name)
 		self.disponivel = True
 		await last_msg.delete()
