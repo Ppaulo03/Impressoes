@@ -3,89 +3,25 @@ import datetime
 import asyncio
 from discord.ext import commands
 from cogs.modules.calendario import *
+from cogs.modules.date import *
 
-
-def verify_bisexto(year_num: int):
-    if year_num % 4 != 0: return False
-    if year_num % 100 != 0: return True
-    if year_num % 400 == 0: return True
-    return False
-
-def get_calendar_months():
-    month_names = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
-                   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembor', 'Dezembro']
-    today = datetime.date.today()
-    month = today.month - 1
-    year = today.year
-    list = ""
-    for i in range(12):
-        m_name = "{:<10}".format(str(month_names[(month + i)%12]))
-        year_n = "{:<10}".format(f"- {year} -> {(month + i)%12 + 1}")
-        line = m_name + year_n
-        list += line + '\n'
-        if month + i == 11: year += 1
-    return list
-
-def get_calendar_days(month: int, year: int):
-    today = datetime.date.today()
-    hj = today.day
-    mes_hj = today.month
- 
-    month_names = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
-                   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembor', 'Dezembro']
-    
-    last_days = [0,31,28,31,30,31,30,31,31,30,31,30,31]
-
-    if month == 2 and verify_bisexto(year): last_day = 29
-    else: last_day = last_days[month]
-    
-
-    first_w_day = datetime.date(year, month, 1).weekday()
-    
-
-    header = "\t\t{}\n\nS   T   Q   Q   S   S   D\n".format(month_names[month - 1])
-    
-    month_calendar = header + "    " * first_w_day
-
-    w_day = first_w_day
-
-    day = 1
-	
-    while True:
-        while w_day <7:
-			
-            if mes_hj == month and hj > day: days = "X   ".format(day)       
-            elif day < 10: days = "{}   ".format(day)
-            else:  days = "{}  ".format(day)
-	    
-		
-            month_calendar += days
-            day += 1
-            w_day += 1
-
-            if day > last_day:  return month_calendar, last_day
-
-        month_calendar = month_calendar + "\n"
-        w_day = 0
 
 class impressora_cog(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.channel_name = 'impressões'
 		self.wrong_channel_msg = f'Please, use this command in the {self.channel_name} channel'
-		self.last_msg = ''
-		self.last_user = None
 		self.disponivel = True
 
+
 	async def send_dm(self, user: discord.User, msg):
-		print(user)
 		user = self.bot.get_user(int(user))
 		await user.send(msg)
-	
+
+
 	async def get_responce(self, channel, user, last_msg, action, need_number = True):
 		def check(m):
 			return m.channel == channel and m.author == user
-		
 		
 		while True:
 			try:	
@@ -97,6 +33,10 @@ class impressora_cog(commands.Cog):
 					await last_msg.delete()
 					return None
 				
+				elif msg.content == 'back':
+					await msg.delete()
+					return 'back'
+			
 				if need_number:
 					if msg.content.isdigit(): flag_good = action(msg)
 					else: flag_good = False		
@@ -110,147 +50,120 @@ class impressora_cog(commands.Cog):
 				await last_msg.delete()
 				return None
 
-	@commands.command(name = "reservar")
-	async def reservar(self, ctx):
-		await ctx.message.delete()
-		if not self.disponivel: return
-		
-		if ctx.channel.name != self.channel_name: 
-			await ctx.send(self.wrong_channel_msg)
-			return
-		
-		if len(impressoras) <= 0:
-			await ctx.send("Não há impressoras disponíveis")
-			return
-		
-		self.disponivel = False
-		user = ctx.author ; channel = ctx.channel
-		today = datetime.date.today()
 
-
-#________________________________________________Mês_____________________________________________________
-
+	async def choose_month(self, message, page, channel, user):
 		description =  '```python\nEscolha o mês (1-12)\n\n' + get_calendar_months()  + '```'
 		
-		page = discord.Embed(title=f"Reserva de Impressoras", description= description, color=0xffff00)
-		last_msg = await ctx.send(embed = page)
+		page.description = description
+		await message.edit(embed = page)
+
 
 		def check_get_mes(msg):
 			return int(msg.content) <= 12 and int(msg.content) > 0
 
-		mes = await self.get_responce(channel, user, last_msg, check_get_mes)
-		if mes is None: return
-		mes = int(mes)
-		
-		ano = today.year if mes >= today.month else today.year + 1
-		month_calendar, last_day = get_calendar_days(mes, ano)
-		
-#________________________________________________Data_____________________________________________________
-		
+		choosed_moonth = await self.get_responce(channel, user, message, check_get_mes)
+		if choosed_moonth is None: return None
+		elif choosed_moonth == 'back': return 'back'
+		return int(choosed_moonth)
+	
+
+	async def choose_day(self, message, page, channel, user, choosed_month, choosed_year):
+
+		month_calendar = get_calendar_days(choosed_month, choosed_year)
 		description =  '```python\nEscolha a data\n\n' + month_calendar + '```'
+		today_day, today_month, _ = get_day_month_year()
+		last_day_month = get_last_day_month(choosed_month, choosed_year)
 
 		page.description = description
-		await last_msg.edit(embed = page)
+		await message.edit(embed = page)
 
 		def check_get_dia(msg):
-			if today.month == mes:
-				return int(msg.content) <= last_day and int(msg.content) >= today.day
-			else: return int(msg.content) <= last_day and int(msg.content) > 0
+			if today_month == choosed_month:
+				return int(msg.content) <= last_day_month and int(msg.content) >= today_day
+			else: return int(msg.content) <= last_day_month and int(msg.content) > 0
 
-		dia = await self.get_responce(channel, user, last_msg, check_get_dia)
-		if dia is None: return
-		dia = int(dia)
+		choosed_day = await self.get_responce(channel, user, message, check_get_dia)
+		if choosed_day is None: return
+		elif choosed_day == 'back': return 'back'
+		return int(choosed_day)
 
-		
-#________________________________________________Impressora_____________________________________________________
 
+	async def choose_impresora(self, message, page, channel, user):
 		description =  '```python\nEscolha a impressora\n\n'
 		for idx, i in enumerate(impressoras):
 			description += f'{i.name} -> {idx}\n'
 		description += '```'
 
 		page.description = description
-		await last_msg.edit(embed = page)
+		await message.edit(embed = page)
 
 		def check_get_impressora(msg):
 			return int(msg.content) < len(impressoras) and int(msg.content) >= 0
 
-		impressora = await self.get_responce(channel, user, last_msg, check_get_impressora)
+		impressora = await self.get_responce(channel, user, message, check_get_impressora)
 		if impressora is None: return
-		impressora = impressoras[int(impressora)]
-		
+		elif impressora == 'back': return 'back'
+		return impressoras[int(impressora)]
 
 
-#________________________________________________Tempo_____________________________________________________
-
+	async def choose_time_length(self, message, page, channel, user):
 		description =  '```python\nTempo de impressão\n\nMínimo - 1 hora\nMáximo - 50 horas```'
 		
 		page.description = description
-		await last_msg.edit(embed = page)
+		await message.edit(embed = page)
 
 		def check_get_tempo(msg):
 			return int(msg.content) <= 50 and int(msg.content) > 0
 
-		tempo = await self.get_responce(channel, user, last_msg, check_get_tempo)
+		tempo = await self.get_responce(channel, user, message, check_get_tempo)
 		if tempo is None: return
-		tempo = int(tempo)
+		elif tempo == 'back': return 'back'
+		return int(tempo)
 
 
-#________________________________________________Inicio_____________________________________________________
-		
+	async def get_horarios(self, message, page, day, month, year, printer, num_dias):
+		description =  '```python\nSelecione o horário\n\n'
 
-		def next_day(d, m, a):
-			d += 1; 
-			if d <= last_day: return d, m, a
-			
-			d = 1; m += 1
-			if m <= 12: return d, m, a
-
-			m = 1; a +=1 
-			return d, m, a
-			
-		num_dias = int(tempo / 24)
-		if tempo % 24 != 0: num_dias += 1
-		
-		description =  '```python\nSelecione o horário de incio\n\n'
-
-		dia_t = dia; mes_t = mes; ano_t = ano
 		idx = True
 		for i in range(num_dias + 1):
 
-			if idx: description += f'Dia {dia_t} / {mes_t} / {ano_t}\n'
-			else: description += f'Dia {dia_t} / {mes_t} / {ano_t} - consulta\n'
+			if idx: description += f'Dia {day} / {month} / {year}\n'
+			else: description += f'Dia {day} / {month} / {year} - consulta\n'
 			
-			description += check_day(dia_t, mes_t, ano_t, impressora, idx)
+			description += check_day(day, month, year, printer, idx)
 			description += '\n'
 
 			idx = False
-			dia_t, mes_t, ano_t = next_day(dia_t, mes_t, ano_t)
+			day, month, year = next_day(day, month, year)
 		description += '```'
 		
 		page.description = description
-		await last_msg.edit(embed = page)
+		await message.edit(embed = page)
 
+
+	async def get_reserva_start(self, message, page, channel, user, day, month, year, printer, time_length):
+		
+		num_dias = int(time_length / 24)
+		if time_length % 24 != 0: num_dias += 1
+		await self.get_horarios(message, page, day, month, year, printer, num_dias)
+		
 		def check_get_inicio(msg):
 			return int(msg.content) < 24 and int(msg.content) >= 0
 
-
 		while True:
-			inicio = await self.get_responce(channel, user, last_msg, check_get_inicio)
+			inicio = await self.get_responce(channel, user, message, check_get_inicio)
 			if inicio is None: return
+			elif inicio == 'back': return 'back'
 			inicio = int(inicio)
 
-			dia_t = dia; mes_t = mes; ano_t = ano
-			tempo_t = tempo; inicio_t = inicio
-			flag_conflito = False
-
+			inicio_t = inicio; flag_conflito = False
 			for i in range(num_dias + 1):
 
-				day = get_day(dia_t, mes_t, ano_t)
-				dia_t, mes_t, ano_t = next_day(dia_t, mes_t, ano_t)
-				if impressora.name not in list(day.reservations.keys()): continue
+				day_calendar = get_day(day, month, year)
+				day, month, year = next_day(day, month, year)
+				if printer.name not in list(day_calendar.reservations.keys()): continue
 
-				reservas_impressora = list(day.reservations[impressora.name].keys())
+				reservas_impressora = list(day_calendar.reservations[printer.name].keys())
 				while inicio_t < 24:
 					if inicio_t in reservas_impressora:
 						description = "Horario escolhido indisponivel\n" + description
@@ -258,203 +171,186 @@ class impressora_cog(commands.Cog):
 						flag_conflito = True
 						break
 
-					inicio_t += 1; tempo_t -= 1
-					if tempo_t == 0: break
+					inicio_t += 1; time_length -= 1
+					if time_length == 0: break
 
 				inicio_t = 0
-				if tempo_t == 0: break
+				if time_length == 0: break
 
-			if flag_conflito:
-				await last_msg.edit(embed = page)
-				continue
+			if not flag_conflito: return inicio
+			await message.edit(embed = page)
 
 
-			dia_t = dia; mes_t = mes; ano_t = ano
-			tempo_t = tempo; inicio_t = inicio
-			for i in range(num_dias + 1):
+	async def get_remove_reserva(self, message, page, channel, user, day, month, year, printer):
+		await self.get_horarios(message, page, day, month, year, printer, 0)
 
-				if inicio_t + tempo_t >= 24: tempo_ef = 23
-				else: tempo_ef = inicio_t + tempo_t
-				tempo_t -= tempo_ef - inicio_t
-
-				add_reserva(dia_t, mes_t, ano_t, impressora,inicio_t,tempo_ef , [user.name, user.id])
-				if tempo_t == 0:
-					await self.send_dm(user.id, f"Impressora {impressora.name} reservada para o dia {dia}/{mes}, a partir das {inicio}")
-					self.disponivel = True
-					await last_msg.delete()
-					return
-
-				inicio_t = 0
-				dia_t, mes_t, ano_t = next_day(dia_t, mes_t, ano_t)
+		def check_get_inicio(msg):
+			if int(msg.content) >= 24 and int(msg.content) < 0: return False
+			day_calendar = get_day(day, month, year)
+			if printer.name not in list(day_calendar.reservations.keys()): return False
 			
-			self.disponivel = True
-			await last_msg.delete()
-			return
+			return day_calendar.reservations[printer.name][int(msg.content)][1] == user.id
+
 		
-		
-	@commands.command(name = "remover")
-	async def remover(self, ctx):
+		inicio = await self.get_responce(channel, user, message, check_get_inicio)
+		if inicio is None: return None
+		elif inicio == 'back': return 'back'
+		return int(inicio)
+
+
+# __________________________________Comandos________________________________________________________________
+
+	@commands.command(name = "reservar")
+	async def reservar(self, ctx):
 		await ctx.message.delete()
+
 		if not self.disponivel: return
-		
-		if ctx.channel.name != self.channel_name: 
-			await ctx.send(self.wrong_channel_msg)
-			return
-		
+		if ctx.channel.name != self.channel_name: return
 		if len(impressoras) <= 0:
 			await ctx.send("Não há impressoras disponíveis")
 			return
 		
 		self.disponivel = False
 		user = ctx.author ; channel = ctx.channel
-		today = datetime.date.today()
+		_, today_month, today_year = get_day_month_year()
 
-
-#________________________________________________Mês_____________________________________________________
-
-		description =  '```python\nEscolha o mês (1-12)\n\n' + get_calendar_months()  + '```'
-		
-		page = discord.Embed(title=f"Remover reserva de Impressoras", description= description, color=0xffff00)
+		page = discord.Embed(title=f"Reserva de Impressoras", color=0xffff00)
 		last_msg = await ctx.send(embed = page)
 
-		def check_get_mes(msg):
-			return int(msg.content) <= 12 and int(msg.content) > 0
+		estado = 0
+		while True:
 
-		mes = await self.get_responce(channel, user, last_msg, check_get_mes)
-		if mes is None: return
-		mes = int(mes)
-		
-		ano = today.year if mes >= today.month else today.year + 1
-		month_calendar, last_day = get_calendar_days(mes, ano)
-		
-#________________________________________________Data_____________________________________________________
-		
-		description =  '```python\nEscolha a data\n\n' + month_calendar + '```'
+			if estado == 0: #Mês
+				choosed_month = await self.choose_month(last_msg, page, channel, user)
+				if choosed_month is None: return
+				elif choosed_month == 'back': continue
+				choosed_year = today_year if choosed_month >= today_month else today_year + 1
+				estado = 1
 
-		page.description = description
-		await last_msg.edit(embed = page)
-
-		def check_get_dia(msg):
-			if today.month == mes:
-				return int(msg.content) <= last_day and int(msg.content) >= today.day
-			else: return int(msg.content) <= last_day and int(msg.content) > 0
+			elif estado == 1: #Dia
+				choosed_day = await self.choose_day(last_msg, page, channel, user, choosed_month, choosed_year)
+				if choosed_day is None: return
+				elif choosed_day == 'back': estado -= 1
+				else: estado += 1
 			
-
-		dia = await self.get_responce(channel, user, last_msg, check_get_dia)
-		if dia is None: return
-		dia = int(dia)
-
-		
-#________________________________________________Impressora_____________________________________________________
-
-		description =  '```python\nEscolha a impressora\n\n'
-		for idx, i in enumerate(impressoras):
-			description += f'{i.name} -> {idx}\n'
-		description += '```'
-
-		page.description = description
-		await last_msg.edit(embed = page)
-
-		def check_get_impressora(msg):
-			return int(msg.content) < len(impressoras) and int(msg.content) >= 0
-
-		impressora = await self.get_responce(channel, user, last_msg, check_get_impressora)
-		if impressora is None: return
-		impressora = impressoras[int(impressora)]
-		
-
-#________________________________________________Inicio_____________________________________________________
-		
-
-		def next_day(d, m, a):
-			d += 1; 
-			if d <= last_day: return d, m, a
+			elif estado == 2: #Impressora
+				choosed_printer = await self.choose_impresora(last_msg, page, channel, user)
+				if choosed_printer is None: return
+				elif choosed_printer == 'back': estado -= 1
+				else: estado += 1
 			
-			d = 1; m += 1
-			if m <= 12: return d, m, a
-
-			m = 1; a +=1 
-			return d, m, a
-		
-		def back_day(d, m, a):
-			d -= 1; 
-			if d >= 0: return d, m, a
-			m -= 1
+			elif estado == 3: #Tempo
+				time_length = await self.choose_time_length(last_msg, page, channel, user)
+				if time_length is None: return
+				elif time_length == 'back': estado -= 1
+				else: estado += 1
 			
-			if m > 0: 
-				last_days = [0,31,28,31,30,31,30,31,31,30,31,30,31]
-				if m == 2 and verify_bisexto(a): d = 29
-				else: d = last_days[m]
-				return d, m, a
+			elif estado == 4: #Inicio
+				inicio = await self.get_reserva_start(last_msg, page, channel, user, choosed_day, choosed_month, choosed_year, choosed_printer, time_length)
+				if inicio is None: return
+				elif inicio == 'back': estado -= 1
+				else: break
 
-			a = 31; m = 12; a -=1 
-			return d, m, a
-			
+#_________________________________________________Realiza reserva________________________________________________
+		confirmation_str = f"Impressora {choosed_printer.name} reservada para o dia {choosed_day}/{choosed_month}, a partir das {inicio}h por {time_length}h"
+		while True:
+			if inicio + time_length >= 24: tempo_ef = 23
+			else: tempo_ef = inicio + time_length
+			time_length -= tempo_ef - inicio
+
+			add_reserva(choosed_day, choosed_month, choosed_year, choosed_printer,inicio,tempo_ef , [user.name, user.id])
+			if time_length == 0:break
+				
+			inicio = 0
+			choosed_day, choosed_month, choosed_year = next_day(choosed_day, choosed_month, choosed_year)
+
+
+		await self.send_dm(user.id, confirmation_str)
+		self.disponivel = True
+		await last_msg.delete()
+		return
 		
-		description =  '```python\nSelecione o horário de incio\n\n'
-
-		dia_t = dia; mes_t = mes; ano_t = ano
-		idx = True
 		
+	@commands.command(name = "remover")
+	async def remover(self, ctx):
+		await ctx.message.delete()
 
-		description += f'Dia {dia_t} / {mes_t} / {ano_t}\n'
+		if not self.disponivel: return
+		if ctx.channel.name != self.channel_name: return
+		if len(impressoras) <= 0:
+			await ctx.send("Não há impressoras disponíveis")
+			return
 		
-		description += check_day(dia_t, mes_t, ano_t, impressora, idx)
-		description += '\n'
+		self.disponivel = False
+		user = ctx.author ; channel = ctx.channel
+		_, today_month, today_year = get_day_month_year()
 
-		dia_t, mes_t, ano_t = next_day(dia_t, mes_t, ano_t)
-		description += '```'
-		
-		page.description = description
-		await last_msg.edit(embed = page)
+		page = discord.Embed(title=f"Remover Reserva", color=0xffff00)
+		last_msg = await ctx.send(embed = page)
 
-		def check_get_inicio(msg):
-			return int(msg.content) < 24 and int(msg.content) >= 0
-
+		estado = 0
 
 		while True:
-			inicio = await self.get_responce(channel, user, last_msg, check_get_inicio)
-			if inicio is None: return
-			inicio = int(inicio)
 
-			day = get_day(dia, mes, ano)
-			if impressora.name not in list(day.reservations.keys()): continue
+			if estado == 0: #Mês
+				choosed_month = await self.choose_month(last_msg, page, channel, user)
+				if choosed_month is None: return
+				elif choosed_month == 'back': continue
+				choosed_year = today_year if choosed_month >= today_month else today_year + 1
+				estado = 1
 			
-			
-			if day.reservations[impressora.name][inicio][1] == user.id:
-				inicio_t = inicio; dia_t = dia; mes_t = mes; ano_t = ano
+			elif estado == 1: #Dia
+				choosed_day = await self.choose_day(last_msg, page, channel, user, choosed_month, choosed_year)
+				if choosed_day is None: return
+				elif choosed_day == 'back': estado -= 1
+				else: estado += 1
 
-				flag_ = True
-				while inicio_t >= 0:
-					if inicio_t not in list(day.reservations[impressora.name].keys()) or day.reservations[impressora.name][inicio_t] != user.name:
-						flag_ = False
-						break
-					inicio_t -= 1
+			elif estado == 2: #Impressora
+				choosed_printer = await self.choose_impresora(last_msg, page, channel, user)
+				if choosed_printer is None: return
+				elif choosed_printer == 'back': estado -= 1
+				else: estado += 1
 
-				if flag_: 
-					dia_t, mes_t, ano_t = back_day(dia_t, mes_t, ano_t)
-					remove_reserva(dia_t, mes_t, ano_t, impressora, inicio, user.name)
-				
-				dia_t = dia; mes_t = mes; ano_t = ano
-				inicio_t = inicio + 1; flag_ = True
-				
-				while inicio_t < 24:
-					if inicio_t not in list(day.reservations[impressora.name].keys()) or day.reservations[impressora.name][inicio_t] != user.name:
-						flag_ = False
-						break
-					inicio_t += 1
+			elif estado == 3: #Inicio
+				inicio = await self.get_remove_reserva(last_msg, page, channel, user, choosed_day, choosed_month, choosed_year, choosed_printer)
+				if inicio is None: return
+				elif inicio == 'back': estado -= 1
+				else: break
+		
+		day_calendar = get_day(choosed_day, choosed_month, choosed_year)
+		confirmation_str = f"Reserva da impressora {choosed_printer.name} para o dia {choosed_day}/{choosed_month} removida"
+		inicio_t = inicio; dia_t = choosed_day; mes_t = choosed_month; ano_t = choosed_year
 
-				if flag_: 
-					dia_t, mes_t, ano_t = next_day(dia_t, mes_t, ano_t)
-					remove_reserva(dia_t, mes_t, ano_t, impressora, inicio, user.name)
-				
-				remove_reserva(dia, mes, ano, impressora, inicio, [user.name, user.id])
-				await self.send_dm(user.id, f"Reserva da impressora {impressora.name}  para o dia {dia}/{mes} removida")
-				self.disponivel = True
-				await last_msg.delete()
+		flag_ = True
+		while inicio_t >= 0:
+			if inicio_t not in list(day_calendar.reservations[choosed_printer.name].keys()) or day_calendar.reservations[choosed_printer.name][inicio_t] != user.name:
+				flag_ = False
 				break
-			
-			return
+			inicio_t -= 1
+
+		if flag_: 
+			dia_t, mes_t, ano_t = back_day(dia_t, mes_t, ano_t)
+			remove_reserva(dia_t, mes_t, ano_t, choosed_printer, inicio, user.name)
+		
+		dia_t = choosed_day; mes_t = choosed_month; ano_t = choosed_year
+		inicio_t = inicio + 1; flag_ = True
+		
+		while inicio_t < 24:
+			if inicio_t not in list(day_calendar.reservations[choosed_printer.name].keys()) or day_calendar.reservations[choosed_printer.name][inicio_t] != user.name:
+				flag_ = False
+				break
+			inicio_t += 1
+
+		if flag_: 
+			dia_t, mes_t, ano_t = next_day(dia_t, mes_t, ano_t)
+			remove_reserva(dia_t, mes_t, ano_t, choosed_printer, inicio, user.name)
+		
+		remove_reserva(choosed_day, choosed_month, choosed_year, choosed_printer, inicio, [user.name, user.id])
+		await self.send_dm(user.id, confirmation_str)
+		
+		self.disponivel = True
+		await last_msg.delete()	
+		return
 		
 	
 	@commands.command(name="add_impressora")
@@ -485,6 +381,7 @@ class impressora_cog(commands.Cog):
 		self.disponivel = True
 		await last_msg.delete()
 	
+
 	@commands.command(name="remove_impressora")
 	async def remover_impressora(self, ctx):
 		await ctx.message.delete()

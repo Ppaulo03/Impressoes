@@ -1,5 +1,5 @@
 import json
-
+from cogs.modules.date import *
 
 impressoras = []
 calendar = {}
@@ -16,28 +16,20 @@ class Year():
         self.months = {i:Month(i, self.year_num) for i in range(1, 13)}
 
 
-class Month():
-    
-    num_dias_mes = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+class Month(): 
     def __init__(self, month_num: int, year_num: int):
 
         self.month_num = month_num
-        if self.month_num == 2 and self.verify_bisexto(year_num):  self.num_dias = 29
-        else: self.num_dias = self.num_dias_mes[month_num - 1]        
+        self.num_dias = get_last_day_month(month_num, year_num)     
         self.days = {i:Day(i) for i in range(1, self.num_dias+1)}
 
-        
-    def verify_bisexto(self, year_num: int):
-        if year_num % 4 != 0: return False
-        if year_num % 100 != 0: return True
-        if year_num % 400 == 0: return True
-        return False
 
 
 class Day():
     def __init__(self, day_num: int):
         self.day_num = day_num
         self.reservations = {}
+
 
 #_____________________________________________JSON____________________________________________________________
 def get_json_list(file):
@@ -132,7 +124,7 @@ def check_day(dia: int, mes: int, ano: int, impressora: Impressora, idx: bool = 
 
             if i < 10: msg += f'{i}h  - '
             else: msg += f'{i}h - '
-            msg += ending + f'- Reservada por - {day.reservations[impressora.name][i][0]}\n'
+            msg += ending + '- Reservada por {' +  day.reservations[impressora.name][i][0] + '}\n'
         else:
             if idx: 
                 if i < 10: msg += str(i) + '  ->'
@@ -220,9 +212,3 @@ def setup():
         add_reserva(r['dia'], r['mes'], r['ano'], impressora, r['inicio'], r['fim'], r['user'])
 
 setup()
-if __name__ == '__main__':
-    setup()
-    
-    add_reserva(1, 1, 2001, impressoras[0],1, 20, 'PP')
-    remove_reserva(1, 1, 2001, impressoras[0],5, 'PP')
-    remove_impressora('zmorph')
