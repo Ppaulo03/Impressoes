@@ -4,7 +4,6 @@ import json
 impressoras = []
 calendar = {}
 
-
 class Impressora():
     def __init__(self, name: str, materiais: list):
         self.name = name
@@ -127,14 +126,13 @@ def check_day(dia: int, mes: int, ano: int, impressora: Impressora, idx: bool = 
         else: ending = str(ending) + 'h'
 
         if i in reservas_impressora:
-            msg += day.reservations[impressora.name] + "\n"
             if idx: 
                 if i < 10: msg += str(i) + '  ->'
                 else: msg += str(i) + ' ->'
 
             if i < 10: msg += f'{i}h  - '
             else: msg += f'{i}h - '
-            msg += ending + f'- Reservada por - {day.reservations[impressora.name][1]}\n'
+            msg += ending + f'- Reservada por - {day.reservations[impressora.name][i]}\n'
         else:
             if idx: 
                 if i < 10: msg += str(i) + '  ->'
@@ -163,6 +161,7 @@ def add_reserva(dia: int, mes: int, ano: int, impressora: Impressora, inicio: in
 
     json_dict = { 'user': user,'impressora': impressora.name,
                   'dia': dia,'mes': mes, 'ano': ano, 'inicio': inicio, 'fim': fim}
+    
     save_json(json.dumps(json_dict), 'dados/reservas.json')
 
 
@@ -174,7 +173,6 @@ def remove_reserva(dia: int, mes: int, ano: int, impressora: Impressora, inicio:
     if inicio < 0: inicio = 0
     if inicio >= 24: inicio = 23
     reservas = list(day.reservations[impressora.name].keys())
-    
     i = inicio
     while i >= 0:
         if i in reservas and day.reservations[impressora.name][i] == user:
@@ -190,9 +188,10 @@ def remove_reserva(dia: int, mes: int, ano: int, impressora: Impressora, inicio:
         else: break
         i += 1
     real_fim = i
-
+    
     json_dict = { 'user': user,'impressora': impressora.name,
                   'dia': dia,'mes': mes, 'ano': ano, 'inicio': real_inicio, 'fim': real_fim}
+
     delete_json(json.dumps(json_dict), 'dados/reservas.json')
 
 
@@ -221,8 +220,6 @@ def setup():
         add_reserva(r['dia'], r['mes'], r['ano'], impressora, r['inicio'], r['fim'], r['user'])
 
 setup()
-add_impressora('zmorph', 'abs')
-
 if __name__ == '__main__':
     setup()
     
