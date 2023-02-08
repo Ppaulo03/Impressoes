@@ -132,7 +132,7 @@ def check_day(dia: int, mes: int, ano: int, impressora: Impressora, idx: bool = 
 
             if i < 10: msg += f'{i}h  - '
             else: msg += f'{i}h - '
-            msg += ending + f'- Reservada por - {day.reservations[impressora.name][i]}\n'
+            msg += ending + f'- Reservada por - {day.reservations[impressora.name][i][0]}\n'
         else:
             if idx: 
                 if i < 10: msg += str(i) + '  ->'
@@ -144,7 +144,7 @@ def check_day(dia: int, mes: int, ano: int, impressora: Impressora, idx: bool = 
     return msg
 
 
-def add_reserva(dia: int, mes: int, ano: int, impressora: Impressora, inicio: int, fim: int, user: str):
+def add_reserva(dia: int, mes: int, ano: int, impressora: Impressora, inicio: int, fim: int, user: list):
    
     day = get_day(dia, mes, ano)
 
@@ -165,7 +165,7 @@ def add_reserva(dia: int, mes: int, ano: int, impressora: Impressora, inicio: in
     save_json(json.dumps(json_dict), 'dados/reservas.json')
 
 
-def remove_reserva(dia: int, mes: int, ano: int, impressora: Impressora, inicio: int, user: str):
+def remove_reserva(dia: int, mes: int, ano: int, impressora: Impressora, inicio: int, user: list):
     
     day = get_day(dia, mes, ano)
     if impressora.name not in list(day.reservations.keys()): return
@@ -175,7 +175,7 @@ def remove_reserva(dia: int, mes: int, ano: int, impressora: Impressora, inicio:
     reservas = list(day.reservations[impressora.name].keys())
     i = inicio
     while i >= 0:
-        if i in reservas and day.reservations[impressora.name][i] == user:
+        if i in reservas and day.reservations[impressora.name][i][1] == user[1]:
             day.reservations[impressora.name].pop(i)
         else: break
         i -= 1
@@ -183,7 +183,7 @@ def remove_reserva(dia: int, mes: int, ano: int, impressora: Impressora, inicio:
 
     i = inicio + 1
     while i < 24:
-        if i in reservas and day.reservations[impressora.name][i] == user:
+        if i in reservas and day.reservations[impressora.name][i][1] == user[1]:
             day.reservations[impressora.name].pop(i)
         else: break
         i += 1

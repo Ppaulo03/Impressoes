@@ -77,7 +77,11 @@ class impressora_cog(commands.Cog):
 		self.last_user = None
 		self.disponivel = True
 
-		
+	async def send_dm(self, user: discord.User, msg):
+		print(user)
+		user = self.bot.get_user(int(user))
+		await user.send(msg)
+	
 	async def get_responce(self, channel, user, last_msg, action, need_number = True):
 		def check(m):
 			return m.channel == channel and m.author == user
@@ -273,8 +277,9 @@ class impressora_cog(commands.Cog):
 				else: tempo_ef = inicio_t + tempo_t
 				tempo_t -= tempo_ef - inicio_t
 
-				add_reserva(dia_t, mes_t, ano_t, impressora,inicio_t,tempo_ef , user.name)
+				add_reserva(dia_t, mes_t, ano_t, impressora,inicio_t,tempo_ef , [user.name, user.id])
 				if tempo_t == 0:
+					await self.send_dm(user.id, f"Impressora {impressora.name} reservada para o dia {dia}/{mes}, a partir das {inicio}")
 					self.disponivel = True
 					await last_msg.delete()
 					return
@@ -416,7 +421,7 @@ class impressora_cog(commands.Cog):
 			if impressora.name not in list(day.reservations.keys()): continue
 			
 			
-			if day.reservations[impressora.name][inicio] == user.name:
+			if day.reservations[impressora.name][inicio][1] == user.id:
 				inicio_t = inicio; dia_t = dia; mes_t = mes; ano_t = ano
 
 				flag_ = True
@@ -443,11 +448,11 @@ class impressora_cog(commands.Cog):
 					dia_t, mes_t, ano_t = next_day(dia_t, mes_t, ano_t)
 					remove_reserva(dia_t, mes_t, ano_t, impressora, inicio, user.name)
 				
-				remove_reserva(dia, mes, ano, impressora, inicio, user.name)
+				remove_reserva(dia, mes, ano, impressora, inicio, [user.name, user.id])
+				await self.send_dm(user.id, f"Reserva da impressora {impressora.name}  para o dia {dia}/{mes} removida")
 				self.disponivel = True
 				await last_msg.delete()
 				break
-			
 			
 			return
 		
@@ -471,12 +476,11 @@ class impressora_cog(commands.Cog):
 		last_msg = await ctx.send(embed = page)
 
 		def check_get_impressora(msg):
-			print('here')
 			return True
 
 		name = await self.get_responce(channel, user, last_msg, check_get_impressora, need_number=False)
 		if name is None: return
-		print(name)
+
 		add_impressora(name, " ")
 		self.disponivel = True
 		await last_msg.delete()
@@ -512,7 +516,46 @@ class impressora_cog(commands.Cog):
 
 		idx = await self.get_responce(channel, user, last_msg, check_get_impressora)
 		if idx is None: return
-		remove_impressora(impressoras[int(idx)].name)
+		idx = int(idx)
+
+		description =  '```python\nRazão da remoção:\n\n```'
+
+
+		page.description = description
+		await last_msg.edit(embed = page)
+
+		def check_get_razao(msg):
+			return True
+
+		razao = await self.get_responce(channel, user, last_msg, check_get_razao, need_number=False)
+		if razao is None: return
+
+		ids = []
+		today = datetime.date.today()
+		for ano_num, ano_obj in calendar.items():
+			flag_ = False
+			if ano_num < today.year: continue
+			elif ano_num == today.year: flag_ = True
+
+			for mes_num, mes_obj in ano_obj.months.items():
+				if flag_ and mes_num < today.month: continue
+				elif flag_ and mes_num != today.month: flag_ = False
+
+				for dia_num, dia_obj in mes_obj.days.items():
+					if flag_ and dia_num < today.day: continue
+					if impressoras[idx].name not in list(dia_obj.reservations.keys()): continue
+
+					for reserva in dia_obj.reservations[impressoras[idx].name].values():
+						if reserva[1] in ids: continue
+						ids.append(reserva[1])
+						msg = 'A impressora {impressoras[idx].name} está desabilitada. Motivo:\n' + razao
+						msg	+=f'\nVocê possui uma reserva no dia {dia_num}/{mes_num},'
+						msg +='se necessário, por favor realize uma reserva em uma impressora diferente'
+						await self.send_dm(reserva[1], msg)
+
+
+
+		remove_impressora(impressoras[idx].name)
 		self.disponivel = True
 		await last_msg.delete()
 
