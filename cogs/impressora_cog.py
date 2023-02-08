@@ -445,8 +445,8 @@ class impressora_cog(commands.Cog):
 					for reserva in dia_obj.reservations[impressoras[idx].name].values():
 						if reserva[1] in ids: continue
 						ids.append(reserva[1])
-						msg = 'A impressora {impressoras[idx].name} está desabilitada. Motivo:\n' + razao
-						msg	+=f'\nVocê possui uma reserva no dia {dia_num}/{mes_num},'
+						msg = f'A impressora {impressoras[idx].name} está desabilitada. Motivo:\n' + razao
+						msg	+= f'\nVocê possui uma reserva no dia {dia_num}/{mes_num},'
 						msg +='se necessário, por favor realize uma reserva em uma impressora diferente'
 						await self.send_dm(reserva[1], msg)
 
