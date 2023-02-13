@@ -6,8 +6,19 @@ class help_cog(commands.Cog):
     self.text_channel_list = []
     self.help_message = """
 ```
-General commands:
-!help(h) - displays all the available commands
+Comandos gerais:
+!help(h) - Mostra os comandos disponiveis
+
+Commandos impressora:
+!reservar(r) -> inicia processo para reserva de impressora
+
+!reservar(r) -h  -> inicia processo para reserva de impressora para o dia atual
+
+!remover(rm)  -> inicia processo para remoção de reserva de impressora
+
+!listar_reservas(lr)  -> inicia processo para exibir reservas de até uma semana a partir de dia selecionado
+
+!listar_reservas(lr)  -h  -> inicia processo para exibir reservas de até uma semana partir do dia atual
 ```
 """
 
@@ -18,7 +29,7 @@ General commands:
       for channel in guild.text_channels:
         self.text_channel_list.append(channel)     
 
-  @commands.command(name="help",aliases=["h"], help="Displays all the available commands")
+  @commands.command(name="help",aliases=["h"], help="Mostra os comandos disponiveis")
   async def help(self, ctx):
     await ctx.send(self.help_message)
 

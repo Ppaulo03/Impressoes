@@ -1,5 +1,9 @@
 import json
-from cogs.modules.date import *
+import datetime
+try:
+    from cogs.modules.date import *
+except Exception:
+    from date import *
 
 impressoras = []
 calendar = {}
@@ -22,7 +26,6 @@ class Month():
         self.month_num = month_num
         self.num_dias = get_last_day_month(month_num, year_num)     
         self.days = {i:Day(i) for i in range(1, self.num_dias+1)}
-
 
 
 class Day():
@@ -187,6 +190,36 @@ def remove_reserva(dia: int, mes: int, ano: int, impressora: Impressora, inicio:
     delete_json(json.dumps(json_dict), 'dados/reservas.json')
 
 
+def check_week(dia: int, mes: int, ano: int, impressora: Impressora):
+    weekday_name = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
+    weekday_num = datetime.date(ano, mes, dia).weekday()
+  
+    reserva_days = []; header = ' '*7; subheader = header
+    for i in range(7):
+        header += '{:<6}'.format(f'{dia}/{mes}'[:6])
+
+        day = get_day(dia, mes, ano)
+        if impressora.name not in list(day.reservations.keys()): day.reservations[impressora.name] = {}
+        reserva_days.append(list(day.reservations[impressora.name].keys()))
+        dia, mes, ano = next_day(dia, mes, ano)
+        
+        weekday = weekday_name[weekday_num%7]
+        subheader += '{:<6}'.format(weekday[:6])
+        weekday_num += 1
+
+    msg = header + '\n' + subheader + '\n'
+    for i in range(0, 24):
+        if i < 10: msg += f'0{i}' 
+        else: msg += f'{i}' 
+        msg += 'h -  '
+
+        for reservas_impressora in reserva_days:
+            tmp_msg = ' X' if i in reservas_impressora else 'dis.'
+            msg += '{:<6}'.format(tmp_msg[:6])
+        msg +='\n'
+            
+
+    return msg
 #_________________________________________________Init Configuration___________________________________________
 def setup():
 
@@ -212,3 +245,6 @@ def setup():
         add_reserva(r['dia'], r['mes'], r['ano'], impressora, r['inicio'], r['fim'], r['user'])
 
 setup()
+
+if __name__ == '__main__':
+    print(check_week(10,12,2022,Impressora('z', 'x')))

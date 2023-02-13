@@ -12,7 +12,12 @@ class impressora_cog(commands.Cog):
 		self.channel_name = 'impressões'
 		self.wrong_channel_msg = f'Please, use this command in the {self.channel_name} channel'
 		self.disponivel = True
+		self.last_message = None
+		bot.add_listener(self.on_deleted, 'on_message_delete')
 
+	async def on_deleted(self, msg):
+		if not self.disponivel and msg == self.last_message:
+			self.disponivel = True
 
 	async def send_dm(self, user: discord.User, msg):
 		user = self.bot.get_user(int(user))
@@ -188,7 +193,7 @@ class impressora_cog(commands.Cog):
 			if int(msg.content) >= 24 and int(msg.content) < 0: return False
 			day_calendar = get_day(day, month, year)
 			if printer.name not in list(day_calendar.reservations.keys()): return False
-			
+			if int(msg.content) not in day_calendar.reservations[printer.name].keys(): return False
 			return day_calendar.reservations[printer.name][int(msg.content)][1] == user.id
 
 		
@@ -200,8 +205,8 @@ class impressora_cog(commands.Cog):
 
 # __________________________________Comandos________________________________________________________________
 
-	@commands.command(name = "reservar")
-	async def reservar(self, ctx):
+	@commands.command(name = "reservar", aliases = ['r'], help='inicia processo para reserva de impressora')
+	async def reservar(self, ctx, *args):
 		await ctx.message.delete()
 
 		if not self.disponivel: return
@@ -212,12 +217,21 @@ class impressora_cog(commands.Cog):
 		
 		self.disponivel = False
 		user = ctx.author ; channel = ctx.channel
-		_, today_month, today_year = get_day_month_year()
+		today_day, today_month, today_year = get_day_month_year()
 
 		page = discord.Embed(title=f"Reserva de Impressoras", color=0xff7200)
 		last_msg = await ctx.send(embed = page)
+		self.last_message = last_msg
 
 		estado = 0
+		
+		if len(args) > 0 and args[0] == '-h':
+			estado = 2
+			choosed_day = today_day
+			choosed_month = today_month
+			choosed_year = today_year
+			
+
 		while True:
 
 			if estado == 0: #Mês
@@ -272,7 +286,7 @@ class impressora_cog(commands.Cog):
 		return
 		
 		
-	@commands.command(name = "remover")
+	@commands.command(name = "remover", aliases = ['rm'], help='inicia processo para remoção de reserva de impressora')
 	async def remover(self, ctx):
 		await ctx.message.delete()
 
@@ -288,6 +302,7 @@ class impressora_cog(commands.Cog):
 
 		page = discord.Embed(title=f"Remover Reserva", color=0xff7200)
 		last_msg = await ctx.send(embed = page)
+		self.last_message = last_msg
 
 		estado = 0
 
@@ -358,7 +373,7 @@ class impressora_cog(commands.Cog):
 	@commands.command(name="add_impressora")
 	async def adicionar_impressora(self, ctx):
 		await ctx.message.delete()
-		role = discord.utils.get(ctx.guild.roles, name="Admin")
+		role = discord.utils.get(ctx.guild.roles, name="Diretoria")
 		if role not in ctx.author.roles:
 			await ctx.send("Você não possui permissão necessaria para adicionar impressoras", delete_after = 5)
 			return
@@ -374,6 +389,7 @@ class impressora_cog(commands.Cog):
 		description =  '```python\nEscreva o nome da impressora\n\n```'
 		page = discord.Embed(title=f"Adicionar Impressoras", description= description, color=0xff7200)
 		last_msg = await ctx.send(embed = page)
+		self.last_message = last_msg
 
 		def check_get_impressora(msg):
 			return True
@@ -390,7 +406,7 @@ class impressora_cog(commands.Cog):
 	@commands.command(name="remove_impressora")
 	async def remover_impressora(self, ctx):
 		await ctx.message.delete()
-		role = discord.utils.get(ctx.guild.roles, name="Admin")
+		role = discord.utils.get(ctx.guild.roles, name="Diretoria")
 		if role not in ctx.author.roles:
 			await ctx.send("Você não possui permissão necessaria para remover impressoras", delete_after = 5)
 			return
@@ -414,6 +430,7 @@ class impressora_cog(commands.Cog):
 
 		page = discord.Embed(title=f"Remover Impressoras", description= description, color=0xff7200)
 		last_msg = await ctx.send(embed = page)
+		self.last_message = last_msg
 
 		def check_get_impressora(msg):
 			return int(msg.content) < len(impressoras) and int(msg.content) >= 0
@@ -464,7 +481,64 @@ class impressora_cog(commands.Cog):
 		await last_msg.delete()
 
 
+	@commands.command(name="listar_reservas", aliases = ['lr'], help='inicia processo para exibir reservas de até uma semana a partir de dia selecionado')
+	async def listar_reservas(self, ctx, *args):
+		await ctx.message.delete()
+
+		if not self.disponivel: return
+		if ctx.channel.name != self.channel_name: return
+		if len(impressoras) <= 0:
+			await ctx.send("Não há impressoras disponíveis", delete_after = 5)
+			return
+		
+		self.disponivel = False
+		user = ctx.author ; channel = ctx.channel
+		today_day, today_month, today_year = get_day_month_year()
+
+		page = discord.Embed(title=f"Lista de reservas", color=0xff7200)
+		last_msg = await ctx.send(embed = page)
+		self.last_message = last_msg
+
+		estado = 0
+		if len(args) > 0 and args[0] == '-h':
+			estado = 2
+			choosed_day = today_day
+			choosed_month = today_month
+			choosed_year = today_year
+			
+
+		while True:
+
+			if estado == 0: #Mês
+				choosed_month = await self.choose_month(last_msg, page, channel, user)
+				if choosed_month is None: return
+				elif choosed_month == 'back': continue
+				choosed_year = today_year if choosed_month >= today_month else today_year + 1
+				estado = 1
+
+			elif estado == 1: #Dia
+				choosed_day = await self.choose_day(last_msg, page, channel, user, choosed_month, choosed_year)
+				if choosed_day is None: return
+				elif choosed_day == 'back': estado -= 1
+				else: estado += 1
+			
+			elif estado == 2: #Impressora
+				choosed_printer = await self.choose_impresora(last_msg, page, channel, user)
+				if choosed_printer is None: return
+				elif choosed_printer == 'back': estado -= 1
+				else: estado += 1
+
+			elif estado == 3:
+				page.description = '```python\nReservas:\n\n'
+				page.description += check_week(choosed_day, choosed_month, choosed_year, choosed_printer)
+				page.description += '```'
+				await last_msg.edit(embed = page)
+
+				command = await self.get_responce(channel, user, last_msg, lambda msg: False)
+				if command is None: return
+				elif command == 'back': estado -= 1
 
 
 async def setup(bot):
     await bot.add_cog(impressora_cog(bot))
+    
