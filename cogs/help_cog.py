@@ -9,7 +9,6 @@ class help_cog(commands.Cog):
     self.help_message = """
 ```
 Comandos gerais:
-<<<<<<< HEAD
 help - Mostra os comandos disponiveis
 
 Commandos impressora:
@@ -22,33 +21,13 @@ remover  -> inicia processo para remoção de reserva de impressora
 listar_reservas  -> inicia processo para exibir reservas de até uma semana a partir de dia selecionado
 
 listar_reservas  -h  -> inicia processo para exibir reservas de até uma semana partir do dia atual
-=======
-!help(h) - Mostra os comandos disponiveis
-
-Commandos impressora:
-!reservar(r) -> inicia processo para reserva de impressora
-
-!reservar(r) -h  -> inicia processo para reserva de impressora para o dia atual
-
-!remover(rm)  -> inicia processo para remoção de reserva de impressora
-
-!listar_reservas(lr)  -> inicia processo para exibir reservas de até uma semana a partir de dia selecionado
-
-!listar_reservas(lr)  -h  -> inicia processo para exibir reservas de até uma semana partir do dia atual
->>>>>>> 737e80f76352d8b72e4eae24974ffdd929000c73
 ```
 """
 
 
-<<<<<<< HEAD
   @app_commands.command(name="help", description="Mostra os comandos disponiveis")
   async def help(self, interaction: discord.Interaction):
     await interaction.response.send_message(self.help_message, ephemeral=True)
-=======
-  @commands.command(name="help",aliases=["h"], help="Mostra os comandos disponiveis")
-  async def help(self, ctx):
-    await ctx.send(self.help_message)
->>>>>>> 737e80f76352d8b72e4eae24974ffdd929000c73
 
 
 async def setup(bot):

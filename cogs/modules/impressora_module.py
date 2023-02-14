@@ -22,8 +22,8 @@ class impressora_cog_module(commands.Cog):
 			self.disponivel = True
 			
 
-	async def send_dm(self, user: discord.User, msg):
-		await self.bot.get_user(int(user)).send(msg)
+	async def send_dm(self, user_id: str, msg):
+		await self.bot.get_user(int(user_id)).send(msg)
 
 
 	async def get_disponivel(self, interaction, need_printer = True):
@@ -188,7 +188,7 @@ class impressora_cog_module(commands.Cog):
 				reservas_impressora = list(day_calendar.reservations[printer.name].keys())
 				while inicio_t < 24:
 					if inicio_t in reservas_impressora:
-						description = "Horario escolhido indisponivel\n" + description
+						description = "Horario escolhido indisponivel\n" + page.description
 						page.description = description
 						flag_conflito = True
 						break

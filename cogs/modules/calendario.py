@@ -81,7 +81,7 @@ def add_impressora(name: str, materiais: list):
 
 
 def remove_impressora(name:str):
-   
+    materiais = None
     for printer in impressoras:
         if printer.name == name: 
             materiais = printer.material
@@ -196,12 +196,7 @@ def check_week(dia: int, mes: int, ano: int, impressora: Impressora):
   
     reserva_days = []; header = ' '*7; subheader = header
     for i in range(7):
-<<<<<<< HEAD
        
-=======
-        header += '{:<6}'.format(f'{dia}/{mes}'[:6])
-
->>>>>>> 737e80f76352d8b72e4eae24974ffdd929000c73
         day = get_day(dia, mes, ano)
         if impressora.name not in list(day.reservations.keys()): day.reservations[impressora.name] = {}
         reserva_days.append(list(day.reservations[impressora.name].keys()))
@@ -218,11 +213,7 @@ def check_week(dia: int, mes: int, ano: int, impressora: Impressora):
         msg += 'h -  '
 
         for reservas_impressora in reserva_days:
-<<<<<<< HEAD
             tmp_msg = 'res.' if i in reservas_impressora else ' o '
-=======
-            tmp_msg = ' X' if i in reservas_impressora else 'dis.'
->>>>>>> 737e80f76352d8b72e4eae24974ffdd929000c73
             msg += '{:<6}'.format(tmp_msg[:6])
         msg +='\n'
             
@@ -247,12 +238,12 @@ def setup():
                 break
         
         if not impressora: 
-            add_impressora(r['impressora'], ' ')
-            impressora = Impressora(r['impressora'], ' ')
+            add_impressora(r['impressora'], [' '])
+            impressora = Impressora(r['impressora'], [' '])
 
         add_reserva(r['dia'], r['mes'], r['ano'], impressora, r['inicio'], r['fim'], r['user'])
 
 setup()
 
 if __name__ == '__main__':
-    print(check_week(10,12,2022,Impressora('z', 'x')))
+    print(check_week(10,12,2022,Impressora("z", ["x"])))
