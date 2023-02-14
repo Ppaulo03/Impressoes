@@ -1,12 +1,28 @@
+import os
+import discord
 from discord.ext import commands
+from discord import app_commands
 
 class help_cog(commands.Cog):
   def __init__(self, bot):
     self.bot = bot
-    self.text_channel_list = []
     self.help_message = """
 ```
 Comandos gerais:
+<<<<<<< HEAD
+help - Mostra os comandos disponiveis
+
+Commandos impressora:
+reservar -> inicia processo para reserva de impressora
+
+reservar -h  -> inicia processo para reserva de impressora para o dia atual
+
+remover  -> inicia processo para remoção de reserva de impressora
+
+listar_reservas  -> inicia processo para exibir reservas de até uma semana a partir de dia selecionado
+
+listar_reservas  -h  -> inicia processo para exibir reservas de até uma semana partir do dia atual
+=======
 !help(h) - Mostra os comandos disponiveis
 
 Commandos impressora:
@@ -19,23 +35,26 @@ Commandos impressora:
 !listar_reservas(lr)  -> inicia processo para exibir reservas de até uma semana a partir de dia selecionado
 
 !listar_reservas(lr)  -h  -> inicia processo para exibir reservas de até uma semana partir do dia atual
+>>>>>>> 737e80f76352d8b72e4eae24974ffdd929000c73
 ```
 """
 
-  @commands.Cog.listener()
-  async def on_ready(self):
-    print('Bot ready')
-    for guild in self.bot.guilds:
-      for channel in guild.text_channels:
-        self.text_channel_list.append(channel)     
 
+<<<<<<< HEAD
+  @app_commands.command(name="help", description="Mostra os comandos disponiveis")
+  async def help(self, interaction: discord.Interaction):
+    await interaction.response.send_message(self.help_message, ephemeral=True)
+=======
   @commands.command(name="help",aliases=["h"], help="Mostra os comandos disponiveis")
   async def help(self, ctx):
     await ctx.send(self.help_message)
+>>>>>>> 737e80f76352d8b72e4eae24974ffdd929000c73
 
-  async def send_to_all(self, msg):
-    for text_channel in self.text_channel_list:
-      await text_channel.send(msg)
 
 async def setup(bot):
-    await bot.add_cog(help_cog(bot))
+    try:
+       with open(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'Secrets/guild.txt'))) as file: guild = file.read()
+    except FileNotFoundError:
+        guild = os.environ['GUILD']
+
+    await bot.add_cog(help_cog(bot), guilds=[discord.Object(id = int(guild))])

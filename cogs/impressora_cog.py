@@ -1,11 +1,14 @@
+import os
 import discord
-import datetime
-import asyncio
-from discord.ext import commands
+from discord import app_commands
+from cogs.modules.impressora_module import impressora_cog_module
 from cogs.modules.calendario import *
 from cogs.modules.date import *
 
 
+<<<<<<< HEAD
+class impressora_cog(impressora_cog_module):
+=======
 class impressora_cog(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
@@ -70,8 +73,27 @@ class impressora_cog(commands.Cog):
 		if choosed_moonth is None: return None
 		elif choosed_moonth == 'back': return 'back'
 		return int(choosed_moonth)
+>>>>>>> 737e80f76352d8b72e4eae24974ffdd929000c73
 	
+	@app_commands.command(name = "reservar", description='inicia processo para reserva de impressora')
+	async def reservar(self, interaction: discord.Interaction, arg: str=''):
 
+<<<<<<< HEAD
+		if not await self.get_disponivel(interaction): return
+		
+		self.disponivel = False
+		user = interaction.user ; channel = interaction.channel
+		today_day, today_month, today_year = get_day_month_year()
+
+		page = discord.Embed(title=f"Reserva de Impressoras", color=0xff7200)
+		await interaction.response.send_message(embed = page)
+		msg = await interaction.original_response()
+		self.last_message = msg
+
+		estado = 0
+		
+		if arg == '-h':
+=======
 	async def choose_day(self, message, page, channel, user, choosed_month, choosed_year):
 
 		month_calendar = get_calendar_days(choosed_month, choosed_year)
@@ -226,6 +248,7 @@ class impressora_cog(commands.Cog):
 		estado = 0
 		
 		if len(args) > 0 and args[0] == '-h':
+>>>>>>> 737e80f76352d8b72e4eae24974ffdd929000c73
 			estado = 2
 			choosed_day = today_day
 			choosed_month = today_month
@@ -235,32 +258,32 @@ class impressora_cog(commands.Cog):
 		while True:
 
 			if estado == 0: #Mês
-				choosed_month = await self.choose_month(last_msg, page, channel, user)
+				choosed_month = await self.choose_month(msg, page, channel, user)
 				if choosed_month is None: return
 				elif choosed_month == 'back': continue
 				choosed_year = today_year if choosed_month >= today_month else today_year + 1
 				estado = 1
 
 			elif estado == 1: #Dia
-				choosed_day = await self.choose_day(last_msg, page, channel, user, choosed_month, choosed_year)
+				choosed_day = await self.choose_day(msg, page, channel, user, choosed_month, choosed_year)
 				if choosed_day is None: return
 				elif choosed_day == 'back': estado -= 1
 				else: estado += 1
 			
 			elif estado == 2: #Impressora
-				choosed_printer = await self.choose_impresora(last_msg, page, channel, user)
+				choosed_printer = await self.choose_impresora(msg, page, channel, user)
 				if choosed_printer is None: return
 				elif choosed_printer == 'back': estado -= 1
 				else: estado += 1
 			
 			elif estado == 3: #Tempo
-				time_length = await self.choose_time_length(last_msg, page, channel, user)
+				time_length = await self.choose_time_length(msg, page, channel, user)
 				if time_length is None: return
 				elif time_length == 'back': estado -= 1
 				else: estado += 1
 			
 			elif estado == 4: #Inicio
-				inicio = await self.get_reserva_start(last_msg, page, channel, user, choosed_day, choosed_month, choosed_year, choosed_printer, time_length)
+				inicio = await self.get_reserva_start(msg, page, channel, user, choosed_day, choosed_month, choosed_year, choosed_printer, time_length)
 				if inicio is None: return
 				elif inicio == 'back': estado -= 1
 				else: break
@@ -281,27 +304,34 @@ class impressora_cog(commands.Cog):
 
 		await self.send_dm(user.id, confirmation_str)
 		self.disponivel = True
-		await ctx.send("Reserva completa", delete_after = 5)
-		await last_msg.delete()
+		await interaction.followup.send("Reserva completa",  ephemeral=True)
+		await msg.delete()
 		return
 		
+<<<<<<< HEAD
+=======
 		
 	@commands.command(name = "remover", aliases = ['rm'], help='inicia processo para remoção de reserva de impressora')
 	async def remover(self, ctx):
 		await ctx.message.delete()
+>>>>>>> 737e80f76352d8b72e4eae24974ffdd929000c73
 
-		if not self.disponivel: return
-		if ctx.channel.name != self.channel_name: return
-		if len(impressoras) <= 0:
-			await ctx.send("Não há impressoras disponíveis", delete_after = 5)
-			return
+	@app_commands.command(name = "remover", description='inicia processo para remoção de reserva de impressora')
+	async def remover(self, interaction: discord.Interaction):
+
+		if not await self.get_disponivel(interaction): return
 		
 		self.disponivel = False
-		user = ctx.author ; channel = ctx.channel
+		user = interaction.user ; channel = interaction.channel
 		_, today_month, today_year = get_day_month_year()
 
 		page = discord.Embed(title=f"Remover Reserva", color=0xff7200)
+<<<<<<< HEAD
+		await interaction.response.send_message(embed = page)
+		last_msg = await interaction.original_response()
+=======
 		last_msg = await ctx.send(embed = page)
+>>>>>>> 737e80f76352d8b72e4eae24974ffdd929000c73
 		self.last_message = last_msg
 
 		estado = 0
@@ -365,30 +395,96 @@ class impressora_cog(commands.Cog):
 		await self.send_dm(user.id, confirmation_str)
 		
 		self.disponivel = True
-		await ctx.send("Reserva removida", delete_after = 5)
-		await last_msg.delete()	
+		await interaction.followup.send("Reserva removida",  ephemeral=True)
+		await last_msg.delete()
 		return
 		
 	
+<<<<<<< HEAD
+	@app_commands.command(name="listar_reservas", description='inicia processo para exibir reservas de até uma semana a partir de dia selecionado')
+	async def listar_reservas(self, interaction: discord.Interaction, arg: str = ''):
+		
+		if not await self.get_disponivel(interaction): return
+
+		self.disponivel = False
+		user = interaction.user ; channel = interaction.channel
+		today_day, today_month, today_year = get_day_month_year()
+
+		page = discord.Embed(title=f"Lista de reservas", color=0xff7200)
+		await interaction.response.send_message(embed = page)
+		last_msg = await interaction.original_response()
+		self.last_message = last_msg
+
+		estado = 0
+		if arg == '-h':
+			estado = 2
+			choosed_day = today_day
+			choosed_month = today_month
+			choosed_year = today_year
+			
+
+		while True:
+
+			if estado == 0: #Mês
+				choosed_month = await self.choose_month(last_msg, page, channel, user)
+				if choosed_month is None: return
+				elif choosed_month == 'back': continue
+				choosed_year = today_year if choosed_month >= today_month else today_year + 1
+				estado = 1
+
+			elif estado == 1: #Dia
+				choosed_day = await self.choose_day(last_msg, page, channel, user, choosed_month, choosed_year)
+				if choosed_day is None: return
+				elif choosed_day == 'back': estado -= 1
+				else: estado += 1
+			
+			elif estado == 2: #Impressora
+				choosed_printer = await self.choose_impresora(last_msg, page, channel, user)
+				if choosed_printer is None: return
+				elif choosed_printer == 'back': estado -= 1
+				else: estado += 1
+
+			elif estado == 3:
+				page.description = '```python\nReservas:\n\n'
+				page.description += check_week(choosed_day, choosed_month, choosed_year, choosed_printer)
+				page.description += '```'
+				await last_msg.edit(embed = page)
+
+				command = await self.get_responce(channel, user, last_msg, lambda msg: False)
+				if command is None: return
+				elif command == 'back': estado -= 1
+
+
+	@app_commands.command(name="add_impressora", description='Adiciona impressora')
+	async def adicionar_impressora(self, interaction: discord.Interaction):
+		
+		if not await self.get_disponivel(interaction, False): return
+
+		user = interaction.user ; channel = interaction.channel
+		#if "Diretoria" not in [y.name for y in user.roles]:
+		if "Admin" not in [y.name for y in user.roles]:
+			await interaction.response.send_message(content="Você não possui permissão necessaria para adicionar impressoras", ephemeral=True)
+=======
 	@commands.command(name="add_impressora")
 	async def adicionar_impressora(self, ctx):
 		await ctx.message.delete()
 		role = discord.utils.get(ctx.guild.roles, name="Diretoria")
 		if role not in ctx.author.roles:
 			await ctx.send("Você não possui permissão necessaria para adicionar impressoras", delete_after = 5)
+>>>>>>> 737e80f76352d8b72e4eae24974ffdd929000c73
 			return
 
-		if not self.disponivel: return
-		if ctx.channel.name != self.channel_name: 
-			await ctx.send(self.wrong_channel_msg)
-			return
-		
 		self.disponivel = False
-		user = ctx.author ; channel = ctx.channel
+		
 		
 		description =  '```python\nEscreva o nome da impressora\n\n```'
 		page = discord.Embed(title=f"Adicionar Impressoras", description= description, color=0xff7200)
+<<<<<<< HEAD
+		await interaction.response.send_message(embed = page)
+		last_msg = await interaction.original_response()
+=======
 		last_msg = await ctx.send(embed = page)
+>>>>>>> 737e80f76352d8b72e4eae24974ffdd929000c73
 		self.last_message = last_msg
 
 		def check_get_impressora(msg):
@@ -398,28 +494,32 @@ class impressora_cog(commands.Cog):
 		if name is None: return
 
 		add_impressora(name, " ")
-		await ctx.send("Impressora Adicionada", delete_after = 5)
 		self.disponivel = True
+		await interaction.followup.send("Impressora Adicionada",  ephemeral=True)
 		await last_msg.delete()
 	
 
+<<<<<<< HEAD
+	@app_commands.command(name="remove_impressora", description='Remove impressora')
+	async def remover_impressora(self, interaction: discord.Interaction):
+
+		if not await self.get_disponivel(interaction, False): return
+
+		user = interaction.user ; channel = interaction.channel
+		#if "Diretoria" not in [y.name.lower() for y in user.roles]:
+		if "Admin" not in [y.name for y in user.roles]:
+			await interaction.response.send_message(content="Você não possui permissão necessaria para adicionar impressoras", ephemeral=True)
+=======
 	@commands.command(name="remove_impressora")
 	async def remover_impressora(self, ctx):
 		await ctx.message.delete()
 		role = discord.utils.get(ctx.guild.roles, name="Diretoria")
 		if role not in ctx.author.roles:
 			await ctx.send("Você não possui permissão necessaria para remover impressoras", delete_after = 5)
+>>>>>>> 737e80f76352d8b72e4eae24974ffdd929000c73
 			return
-		if not self.disponivel: return
-		if ctx.channel.name != self.channel_name: 
-			await ctx.send(self.wrong_channel_msg)
-			return
-		if len(impressoras) <= 0:
-			await ctx.send("Não há impressoras disponíveis", delete_after = 5)
-			return
-		
+
 		self.disponivel = False
-		user = ctx.author ; channel = ctx.channel
 		
 		description =  '```python\nEscolha a impressora\n\n'
 
@@ -429,7 +529,12 @@ class impressora_cog(commands.Cog):
 
 
 		page = discord.Embed(title=f"Remover Impressoras", description= description, color=0xff7200)
+<<<<<<< HEAD
+		await interaction.response.send_message(embed = page)
+		last_msg = await interaction.original_response()
+=======
 		last_msg = await ctx.send(embed = page)
+>>>>>>> 737e80f76352d8b72e4eae24974ffdd929000c73
 		self.last_message = last_msg
 
 		def check_get_impressora(msg):
@@ -475,10 +580,22 @@ class impressora_cog(commands.Cog):
 						await self.send_dm(reserva[1], msg)
 
 
-		await ctx.send("Impressora removida", delete_after = 5)
 		remove_impressora(impressoras[idx].name)
 		self.disponivel = True
+		await interaction.followup.send("Impressora removida",  ephemeral=True)
 		await last_msg.delete()
+<<<<<<< HEAD
+	
+
+
+async def setup(bot):
+	try:
+		with open(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'Secrets/guild.txt'))) as file: guild = file.read()
+	except FileNotFoundError:
+		guild = os.environ['GUILD']
+
+	await bot.add_cog(impressora_cog(bot), guilds=[discord.Object(id = int(guild))])
+=======
 
 
 	@commands.command(name="listar_reservas", aliases = ['lr'], help='inicia processo para exibir reservas de até uma semana a partir de dia selecionado')
@@ -542,3 +659,4 @@ class impressora_cog(commands.Cog):
 async def setup(bot):
     await bot.add_cog(impressora_cog(bot))
     
+>>>>>>> 737e80f76352d8b72e4eae24974ffdd929000c73

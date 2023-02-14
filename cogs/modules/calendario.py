@@ -196,8 +196,12 @@ def check_week(dia: int, mes: int, ano: int, impressora: Impressora):
   
     reserva_days = []; header = ' '*7; subheader = header
     for i in range(7):
+<<<<<<< HEAD
+       
+=======
         header += '{:<6}'.format(f'{dia}/{mes}'[:6])
 
+>>>>>>> 737e80f76352d8b72e4eae24974ffdd929000c73
         day = get_day(dia, mes, ano)
         if impressora.name not in list(day.reservations.keys()): day.reservations[impressora.name] = {}
         reserva_days.append(list(day.reservations[impressora.name].keys()))
@@ -214,7 +218,11 @@ def check_week(dia: int, mes: int, ano: int, impressora: Impressora):
         msg += 'h -  '
 
         for reservas_impressora in reserva_days:
+<<<<<<< HEAD
+            tmp_msg = 'res.' if i in reservas_impressora else ' o '
+=======
             tmp_msg = ' X' if i in reservas_impressora else 'dis.'
+>>>>>>> 737e80f76352d8b72e4eae24974ffdd929000c73
             msg += '{:<6}'.format(tmp_msg[:6])
         msg +='\n'
             
