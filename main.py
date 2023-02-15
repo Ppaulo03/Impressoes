@@ -1,11 +1,12 @@
 import os
 import asyncio
+import logging
 
+import discord
 from discord import Intents
 from discord.ext import commands
 
-import discord
-import logging
+from keep_alive import keep_alive
 
 
 logger = logging.getLogger('discord')
@@ -47,4 +48,5 @@ async def main():
         await bot.start(token)
 
 if __name__ == '__main__':
+    keep_alive()
     asyncio.run(main())
